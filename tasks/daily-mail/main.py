@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 from datetime import datetime, timedelta, timezone
+from html import escape
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +34,8 @@ from lib.mailer import Mailer, MailMessage, mask_addr, split_addresses  # noqa: 
 CONTENT_FILE = Path(__file__).resolve().parent / "content.md"
 BJT = timezone(timedelta(hours=8))  # 北京时间
 TRUTHY = {"1", "true", "yes", "on", "y"}
+FALSY = {"0", "false", "no", "off", "n"}
+URL_RE = re.compile(r"(https?://[^\s<>\"']+)")
 
 
 def first_of(*values) -> str:
@@ -56,6 +60,36 @@ def fill_template(text: str) -> str:
     now = datetime.now(BJT)
     weekday = "星期" + "一二三四五六日"[now.weekday()]
     return text.replace("{{date}}", now.strftime("%Y-%m-%d")).replace("{{weekday}}", weekday)
+
+
+def resolve_html() -> bool:
+    """HTML 开关:INPUT_HTML / MAIL_HTML 显式设置时生效,默认开。"""
+    raw = first_of(dispatch_input("HTML"), env("MAIL_HTML")).lower()
+    if raw in TRUTHY:
+        return True
+    if raw in FALSY:
+        return False
+    return True  # 默认使用 HTML,保证样式
+
+
+def wrap_html(text: str) -> str:
+    """把纯文本正文包装成内联样式的 HTML 邮件(零依赖,兼容各邮箱客户端)。"""
+    escaped = escape(text)
+    escaped = URL_RE.sub(r'<a href="\1" style="color:#1a73e8;">\1</a>', escaped)
+    paragraphs = [p.strip() for p in escaped.split("\n\n") if p.strip()]
+    body_html = "".join(
+        f'<p style="margin:0 0 14px;line-height:1.8;">{p.replace(chr(10), "<br>")}</p>'
+        for p in paragraphs
+    )
+    return (
+        '<div style="font-family:-apple-system,\'Segoe UI\',\'Microsoft YaHei\',sans-serif;'
+        'max-width:560px;margin:0 auto;padding:24px;color:#333;">'
+        '<div style="background:#f0f6ff;border-left:4px solid #1a73e8;border-radius:6px;'
+        f'padding:18px 20px;font-size:15px;">{body_html}</div>'
+        '<p style="margin:14px 0 0;font-size:12px;color:#999;">'
+        '本邮件由 my-cron 定时任务自动发送,请勿回复。</p>'
+        "</div>"
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -109,12 +143,16 @@ def main() -> int:
         print(f"[task] 错误:{error}", file=sys.stderr)
         return 1
 
+    use_html = resolve_html()
+    if use_html and not body.lstrip().startswith("<"):  # 已是 HTML 的正文不再包装
+        body = wrap_html(body)
+
     message = MailMessage(
         to=recipients,
         subject=fill_template(first_of(args.subject, dispatch_input("SUBJECT"), env("MAIL_SUBJECT"),
                                        "每日定时邮件 {{date}}")),
         body=fill_template(body),
-        html=any(value in TRUTHY for value in (dispatch_input("HTML"), env("MAIL_HTML"))),
+        html=use_html,
     )
 
     if args.dry_run:

@@ -18,9 +18,9 @@ on:
         required: false
         default: ""
       html:
-        description: 正文按 HTML 发送
+        description: 正文按 HTML 发送(默认开启,取消勾选可发纯文本)
         type: boolean
-        default: false
+        default: true
 
 permissions: {}
 
