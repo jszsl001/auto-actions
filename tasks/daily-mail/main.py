@@ -87,7 +87,7 @@ def wrap_html(text: str) -> str:
         '<div style="background:#f0f6ff;border-left:4px solid #1a73e8;border-radius:6px;'
         f'padding:18px 20px;font-size:15px;">{body_html}</div>'
         '<p style="margin:14px 0 0;font-size:12px;color:#999;">'
-        '本邮件由 my-cron 定时任务自动发送,请勿回复。</p>'
+        '本邮件由 auto-actions 定时任务自动发送,请勿回复。</p>'
         "</div>"
     )
 

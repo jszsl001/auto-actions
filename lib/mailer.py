@@ -87,7 +87,7 @@ class Mailer:
     def _build_mime(self, message: MailMessage) -> MIMEText:
         mime = MIMEText(message.body, "html" if message.html else "plain", "utf-8")
         mime["Subject"] = str(Header(message.subject, "utf-8"))  # 非中文 ASCII 主题自动 RFC2047 编码
-        sender = self.user or "my-cron@localhost"
+        sender = self.user or "auto-actions@localhost"
         mime["From"] = formataddr((message.from_name, sender)) if message.from_name else sender
         mime["To"] = ", ".join(message.to)
         if message.cc:

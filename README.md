@@ -1,4 +1,4 @@
-# my-cron
+# auto-actions
 
 基于 GitHub Actions 的定时任务仓库，通过 Workflow 的 `schedule`（cron）触发，托管各类周期性任务。
 
