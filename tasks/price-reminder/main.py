@@ -1,13 +1,13 @@
-"""每日定时邮件任务。
+"""电价数据提醒任务。
 
-每天 09:10(北京时间)向多个收件人发送一封内容可自定义的邮件,
-由 GitHub Actions 的 schedule 触发,也可手动触发测试。
+每天 09:10(北京时间)向多个收件人发送一封提醒邮件,
+提示其查看当日电价数据,由 GitHub Actions 的 schedule 触发,也可手动触发测试。
 
 配置来源(优先级从高到低):
   1. 命令行参数(--to / --subject / --file)
   2. workflow_dispatch 手动输入(INPUT_TO / INPUT_SUBJECT / INPUT_BODY / INPUT_HTML)
   3. 仓库 Variables/Secrets(MAIL_TO / MAIL_SUBJECT / MAIL_HTML + SMTP_*)
-  4. 默认值(正文读本目录 content.md,主题 "每日定时邮件 YYYY-MM-DD")
+  4. 默认值(正文读本目录 content.md,主题 "电价数据提醒 YYYY-MM-DD")
 
 正文支持模板变量:{{date}}(当日日期)、{{weekday}}(星期几),按北京时间解析。
 
@@ -31,7 +31,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from lib.mailer import Mailer, MailMessage, mask_addr, split_addresses  # noqa: E402
 
-CONTENT_FILE = Path(__file__).resolve().parent / "content.md"
+CONTENT_FILE = Path(__file__).resolve().parent / "content.md"  # 电价提醒默认正文
 BJT = timezone(timedelta(hours=8))  # 北京时间
 TRUTHY = {"1", "true", "yes", "on", "y"}
 FALSY = {"0", "false", "no", "off", "n"}
@@ -93,10 +93,10 @@ def wrap_html(text: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="每日定时邮件任务")
+    parser = argparse.ArgumentParser(description="电价数据提醒任务")
     parser.add_argument("--to", help="收件人,逗号分隔(覆盖 MAIL_TO)")
     parser.add_argument("--subject", help="邮件主题(覆盖 MAIL_SUBJECT)")
-    parser.add_argument("--file", help="正文文件路径(默认 tasks/daily-mail/content.md)")
+    parser.add_argument("--file", help="正文文件路径(默认 tasks/price-reminder/content.md)")
     parser.add_argument("--dry-run", action="store_true", help="只构造邮件并打印摘要,不实际发送")
     return parser.parse_args()
 
@@ -150,7 +150,7 @@ def main() -> int:
     message = MailMessage(
         to=recipients,
         subject=fill_template(first_of(args.subject, dispatch_input("SUBJECT"), env("MAIL_SUBJECT"),
-                                       "每日定时邮件 {{date}}")),
+                                       "电价数据提醒 {{date}}")),
         body=fill_template(body),
         html=use_html,
     )
