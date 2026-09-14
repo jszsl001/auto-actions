@@ -55,4 +55,4 @@ jobs:
           INPUT_SUBJECT: ${{ github.event.inputs.subject }}
           INPUT_BODY: ${{ github.event.inputs.body }}
           INPUT_HTML: ${{ github.event.inputs.html }}
-        run: python tasksmain.py
+        run: python tasks/price-reminder/main.py
