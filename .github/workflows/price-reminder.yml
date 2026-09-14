@@ -22,11 +22,11 @@ on:
         type: boolean
         default: true
 
-permissions: {}
+# permissions: {}
 
-concurrency:
-  group: price-reminder
-  cancel-in-progress: false
+# concurrency:
+#   group: price-reminder
+#   cancel-in-progress: false
 
 jobs:
   send:
