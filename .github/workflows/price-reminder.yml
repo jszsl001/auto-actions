@@ -1,0 +1,56 @@
+name: price-reminder
+
+on:
+  schedule:
+    - cron: '1 1 * * 1-6'
+  workflow_dispatch:
+    inputs:
+      to:
+        description: '收件人(逗号分隔;留空使用仓库变量 MAIL_TO)'
+        required: false
+        default: ''
+      subject:
+        description: '邮件主题(留空使用 MAIL_SUBJECT 或默认值)'
+        required: false
+        default: ''
+      body:
+        description: '邮件正文(留空使用 taskscontent.md)'
+        required: false
+        default: ''
+      html:
+        description: '正文按 HTML 发送(默认开启,取消勾选可发纯文本)'
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: price-reminder
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Send mail
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ vars.MAIL_TO }}
+          MAIL_SUBJECT: ${{ vars.MAIL_SUBJECT }}
+          MAIL_HTML: ${{ vars.MAIL_HTML }}
+          INPUT_TO: ${{ github.event.inputs.to }}
+          INPUT_SUBJECT: ${{ github.event.inputs.subject }}
+          INPUT_BODY: ${{ github.event.inputs.body }}
+          INPUT_HTML: ${{ github.event.inputs.html }}
+        run: python tasksmain.py
